@@ -1,10 +1,13 @@
 ﻿using UnityEngine;
 
-public class AutoIntensity : MonoBehaviour
+public class DayNightController : MonoBehaviour
 {
 	public Gradient nightDayColor;
+    public GameObject stars;
+    private Transform starTransform;
+    private ParticleSystem starSphere;
 
-	public float maxIntensity = 3f;
+    public float maxIntensity = 3f;
 	public float minIntensity = 0f;
 	public float minPoint = -0.2f;
 
@@ -28,6 +31,8 @@ public class AutoIntensity : MonoBehaviour
 	{	
 		mainLight = GetComponent<Light>();
 		skyMat = RenderSettings.skybox;
+        starTransform = stars.GetComponent<Transform>();
+        starSphere = stars.GetComponent<ParticleSystem>();
 	}
 
 	void Update () 
@@ -49,9 +54,29 @@ public class AutoIntensity : MonoBehaviour
 		i = ((dayAtmosphereThickness - nightAtmosphereThickness) * dot) + nightAtmosphereThickness;
 		skyMat.SetFloat ("_AtmosphereThickness", i);
 
-		if (dot > 0) 
-			transform.Rotate (dayRotateSpeed * Time.deltaTime * skySpeed);
-		else
-			transform.Rotate (nightRotateSpeed * Time.deltaTime * skySpeed);
+        if (dot > 0)
+        {
+            if(starSphere.isPlaying)
+            {
+                starSphere.Stop();
+            }
+
+            transform.Rotate(dayRotateSpeed * Time.deltaTime * skySpeed);
+        }
+        else
+        {
+            transform.Rotate(nightRotateSpeed * Time.deltaTime * skySpeed);
+            illuminateAndRotateStars();
+        }
 	}
+
+    private void illuminateAndRotateStars()
+    {
+        starTransform.transform.rotation = transform.rotation;
+
+        if (!starSphere.isPlaying)
+        {
+            starSphere.Play();
+        }
+    }
 }
