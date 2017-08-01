@@ -1,7 +1,6 @@
 using UnityEngine;
 using InControl;
 
-
 namespace CustomProfileExample
 {
 	// This custom profile is enabled by adding it to the Custom Profiles list
@@ -47,6 +46,12 @@ namespace CustomProfileExample
                     Handle = "Reload - Keyboard",
                     Target = InputControlType.Action3,
                     Source = KeyCodeButton( KeyCode.R)
+                },
+                new InputControlMapping
+                {
+                    Handle = "Turn on light - Keyboard",
+                    Target = InputControlType.Action2,
+                    Source = KeyCodeButton( KeyCode.L)
                 },
                 new InputControlMapping
                 {
