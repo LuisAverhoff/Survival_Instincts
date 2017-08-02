@@ -15,6 +15,10 @@ public class Weapon : MonoBehaviour
     public AudioClip weaponShootClip;
     public AudioClip weaponReloadClip;
 
+    // These two variables control the spread of the cone.
+    public float scaleLimit;
+    public float spreadZDirection;
+
     public float tracerSpeed;
 
     public Transform bulletSpawnPoint;
@@ -156,23 +160,26 @@ public class Weapon : MonoBehaviour
 
     private IEnumerator checkIfHit()
     {
+        Vector3 randomDirection = getRandomBulletDirection();
         RaycastHit hit;
 
-        // Cast an exploratory raycast first
-        if(Physics.Raycast(bulletSpawnPoint.position, bulletSpawnPoint.transform.forward, out hit, bulletRange))
+        // Cast an exploratory raycast first from a randomly generated direction.
+        if(Physics.Raycast(bulletSpawnPoint.position, randomDirection, out hit, bulletRange))
         {
-            StartCoroutine(spawnBulletTracer());
-
+            // calculate how long it would take the bullet to get to its target.
             float delay = hit.distance / bulletSpeed;
-            // calculate the flight time.
+            // calculate the bullet drop at the target.
             Vector3 hitPoint = hit.point;
             hitPoint.y -= delay * 9.8f;
-            // calculate the bullet drop at the target.
-            Vector3 dir = hitPoint - bulletSpawnPoint.position;
+            // calculate the new vector's direction
+            Vector3 dir = (hitPoint - bulletSpawnPoint.position).normalized;
             yield return new WaitForSeconds(delay);
 
+            // spawn a bullet tracer from the direction(normalized) that was lowered to simulate a bullet drop.
+            StartCoroutine(spawnBulletTracer(dir));
+
             // Now perform the actual shooting.
-            if(Physics.Raycast(bulletSpawnPoint.position, dir, out hit, bulletRange))
+            if (Physics.Raycast(bulletSpawnPoint.position, dir, out hit, bulletRange))
             {
                 GameObject bulletHole = SpawningPool.CreateFromCache(bulletImpact, hit.point, Quaternion.FromToRotation(Vector3.forward, hit.normal));
                 yield return new WaitForSeconds(3.0f);
@@ -181,16 +188,27 @@ public class Weapon : MonoBehaviour
         }
     }
 
-    private IEnumerator spawnBulletTracer()
+    private Vector3 getRandomBulletDirection()
     {
+        // Generate a random XY point inside a circle.
+        Vector3 randomDirection = Random.insideUnitCircle * scaleLimit;
+        randomDirection.z = spreadZDirection;
+        randomDirection = transform.TransformDirection(randomDirection.normalized);
+        return randomDirection;
+    }
+
+    private IEnumerator spawnBulletTracer(Vector3 direction)
+    {
+        // Retrieve from the spawn pool a cached bullet tracer object.
         GameObject bulletTracer = SpawningPool.CreateFromCache(tracer, bulletSpawnPoint.transform.position, bulletSpawnPoint.transform.rotation);
 
         Rigidbody rigidbodyTracer = bulletTracer.GetComponent<Rigidbody>();
 
-        rigidbodyTracer.velocity = transform.TransformDirection(Vector3.forward * tracerSpeed);
+        rigidbodyTracer.velocity = direction * tracerSpeed;
 
-        yield return new WaitForSeconds(1.0f);
+        yield return new WaitForSeconds(1.5f);
         SpawningPool.ReturnToCache(bulletTracer, "Tracer");
+        // Send it back to the cache so that it may be used later.
     }
 
 
