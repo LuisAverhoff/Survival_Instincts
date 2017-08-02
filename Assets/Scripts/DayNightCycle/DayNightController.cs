@@ -15,12 +15,11 @@ public class DayNightController : MonoBehaviour
     public float startTime = 12.0f;
 	//what's the current time
 	private float currentTime = 0.0f;
-	public string timeString = "00:00 AM";
 	//x rotation value of the light
 	private float xValueOfSun = 90.0f;
 	//Rotation speed of spheres
 	[SerializeField]	public Transform starSphere;
-    private ParticleSystem starParticleSystem;
+    private Renderer starParticleRenderer;
 	//star's rotation speed
 	public float starRotationSpeed = 0.15f;
 
@@ -29,7 +28,7 @@ public class DayNightController : MonoBehaviour
     {
 		//set the start time
 		currentTime = startTime;
-        starParticleSystem = starSphere.GetComponent<ParticleSystem>();
+        starParticleRenderer = starSphere.GetComponent<Renderer>();
 	}
 	
 	// Update is called once per frame
@@ -53,9 +52,6 @@ public class DayNightController : MonoBehaviour
         {
 			enableOrDisableStars();
 		}
-
-		//Gets The timeString;
-		CalculateTime ();
 	}
 
 	private void ControlLight()
@@ -87,10 +83,10 @@ public class DayNightController : MonoBehaviour
     {
 		starSphere.transform.Rotate(Vector3.forward*starRotationSpeed*daySpeedMultiplier*Time.deltaTime);
 
-        Color currentColor = starParticleSystem.GetComponent<Renderer>().material.GetColor("_TintColor");
+        Color currentColor = starParticleRenderer.material.GetColor("_TintColor");
         Color newColor;
 
-        if (currentTime > 5.5f && currentTime < 18.0f && starParticleSystem)
+        if (currentTime > 5.5f && currentTime < 18.0f && starParticleRenderer)
         {
 		    newColor = new Color (currentColor.r,currentColor.g,currentColor.b,Mathf.Lerp(currentColor.a , 0.0f,Time.deltaTime*50.0f*daySpeedMultiplier));
         }
@@ -99,28 +95,11 @@ public class DayNightController : MonoBehaviour
             newColor = new Color(currentColor.r, currentColor.g, currentColor.b, Mathf.Lerp(currentColor.a, 1.0f, Time.deltaTime * 50.0f * daySpeedMultiplier));
         }
 
-        starParticleSystem.GetComponent<Renderer>().material.SetColor("_TintColor", newColor);
+        starParticleRenderer.material.SetColor("_TintColor", newColor);
     }
 
-	private void CalculateTime ()
+    public float getCurrentTimeOfDay()
     {
-		//Is it am of pm?
-		string AMPM = "";
-		float minutes = ((currentTime) - (Mathf.Floor(currentTime)))*60.0f;
-
-		if (currentTime <= 12.0f)
-        {
-			AMPM = "AM";
-
-		}
-        else
-        {
-			AMPM = "PM";
-		}
-
-		//Make the final string
-		timeString = Mathf.Floor(currentTime).ToString() + " : " + minutes.ToString("F0") + " "+AMPM ;
-
-	}
-
+        return currentTime;
+    }
 }

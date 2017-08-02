@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityStandardAssets.CrossPlatformInput;
+﻿using UnityEngine;
+using InControl;
 
 public class SimpleMouseLook : MonoBehaviour
 {
@@ -26,8 +24,10 @@ public class SimpleMouseLook : MonoBehaviour
     // Update is called once per frame
     void Update ()
     {
-        rotationX -= CrossPlatformInputManager.GetAxis("Mouse Y") * xSensitivity;
-        rotationY += CrossPlatformInputManager.GetAxis("Mouse X") * xSensitivity;
+        InputDevice device = InputManager.ActiveDevice;
+
+        rotationX -= device.RightStickY * xSensitivity;
+        rotationY += device.RightStickX * xSensitivity;
 
         rotationX = Mathf.Clamp(rotationX, minimumX, maximumX);
 
