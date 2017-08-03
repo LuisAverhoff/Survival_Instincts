@@ -13,6 +13,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
         [SerializeField] private bool m_IsCrouching;
         [SerializeField] private float m_WalkSpeed;
         [SerializeField] private float m_RunSpeed;
+        [SerializeField] private float m_crouchSpeed;
         [SerializeField] private float crouchSmoothness;
         [SerializeField] [Range(0f, 1f)] private float m_RunstepLenghten;
         [SerializeField] private float m_JumpSpeed;
@@ -68,7 +69,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
         {
             //RotateView();
             // the jump state needs to read here to make sure it is not missed
-            if (!m_Jump)
+            if (!m_Jump && !m_Jumping)
             {
                 m_Jump = CrossPlatformInputManager.GetButtonDown("Jump");
             }
@@ -239,7 +240,17 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_IsWalking = !CrossPlatformInputManager.GetButton("Running"); ;
 #endif
             // set the desired speed to be walking or running
-            speed = m_IsWalking ? m_WalkSpeed : m_RunSpeed;
+            if (m_IsCrouching)
+            {
+                speed = m_crouchSpeed;
+            }
+            else if (m_IsWalking)
+            {
+                speed = m_WalkSpeed;
+            }
+            else
+                speed = m_RunSpeed;
+
             m_Input = new Vector2(horizontal, vertical);
 
             // normalize input if it exceeds 1 in combined length:

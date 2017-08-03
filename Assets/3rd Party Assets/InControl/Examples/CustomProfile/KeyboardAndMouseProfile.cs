@@ -50,7 +50,7 @@ namespace CustomProfileExample
                 new InputControlMapping
                 {
                     Handle = "Turn on light - Keyboard",
-                    Target = InputControlType.Action2,
+                    Target = InputControlType.RightStickButton,
                     Source = KeyCodeButton( KeyCode.L)
                 },
                 new InputControlMapping

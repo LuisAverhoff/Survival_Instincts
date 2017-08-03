@@ -4,15 +4,12 @@ using InControl;
 public class ToggleLight : MonoBehaviour
 {
     private Light toggableLight;
-    [SerializeField] private float timeToWaitToToggle = 1.0f;
-    private float toggleTimer;
     private bool hasLightChangedState;
 
     // Use this for initialization
     void Start ()
     {
         toggableLight = GetComponent<Light>();
-        toggleTimer = 0.0f;
         hasLightChangedState = false;
 	}
 	
@@ -21,11 +18,9 @@ public class ToggleLight : MonoBehaviour
     {
         InputDevice device = InputManager.ActiveDevice;
 
-        if (device.Action2)
+        if (device.RightStickButton)
         {
-            toggleTimer += Time.deltaTime;
-
-            if (toggleTimer > timeToWaitToToggle && !hasLightChangedState)
+            if (!hasLightChangedState)
             {
                 toggableLight.enabled = !toggableLight.enabled;
                 hasLightChangedState = true;
@@ -33,7 +28,6 @@ public class ToggleLight : MonoBehaviour
         }
         else
         {
-            toggleTimer = 0.0f;
             hasLightChangedState = false;
         }
     }
