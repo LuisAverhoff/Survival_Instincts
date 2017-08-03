@@ -10,9 +10,10 @@ namespace UnityStandardAssets.Characters.FirstPerson
     public class FirstPersonController : MonoBehaviour
     {
         [SerializeField] private bool m_IsWalking;
-        //[SerializeField] private bool m_IsCrouching;
+        [SerializeField] private bool m_IsCrouching;
         [SerializeField] private float m_WalkSpeed;
         [SerializeField] private float m_RunSpeed;
+        [SerializeField] private float crouchSmoothness;
         [SerializeField] [Range(0f, 1f)] private float m_RunstepLenghten;
         [SerializeField] private float m_JumpSpeed;
         [SerializeField] private float m_StickToGroundForce;
@@ -41,7 +42,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private float m_NextStep;
         private bool m_Jumping;
         private AudioSource m_AudioSource;
-        
+        private float originalCharacterHeight;
+        private float crouchCharacterHeight;
 
         // Use this for initialization
         private void Start()
@@ -55,6 +57,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_NextStep = m_StepCycle/2f;
             m_Jumping = false;
             m_AudioSource = GetComponent<AudioSource>();
+            originalCharacterHeight = m_CharacterController.height;
+            crouchCharacterHeight = originalCharacterHeight * 0.5f;
 			//m_MouseLook.Init(transform , m_Camera.transform);
         }
 
@@ -68,6 +72,25 @@ namespace UnityStandardAssets.Characters.FirstPerson
             {
                 m_Jump = CrossPlatformInputManager.GetButtonDown("Jump");
             }
+
+            if(CrossPlatformInputManager.GetButtonDown("Crouching"))
+            {
+                m_IsCrouching = !m_IsCrouching;
+            }
+
+            float lastHeight = m_CharacterController.height;
+
+            if (m_IsCrouching)
+            {
+                m_CharacterController.height = Mathf.Lerp(m_CharacterController.height, crouchCharacterHeight, crouchSmoothness * Time.deltaTime);
+            }
+            else
+            {
+                m_CharacterController.height = Mathf.Lerp(m_CharacterController.height, originalCharacterHeight, crouchSmoothness * Time.deltaTime);
+            }
+
+            Vector3 heightOffset = new Vector3(0, (m_CharacterController.height - lastHeight) * 0.5f, 0);
+            transform.position += heightOffset;
 
             if (!m_PreviouslyGrounded && m_CharacterController.isGrounded)
             {
@@ -103,7 +126,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
             // get a normal for the surface that is being touched to move along it
             RaycastHit hitInfo;
             Physics.SphereCast(transform.position, m_CharacterController.radius, Vector3.down, out hitInfo,
-                               m_CharacterController.height/2f, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+                               crouchCharacterHeight, Physics.AllLayers, QueryTriggerInteraction.Ignore);
             desiredMove = Vector3.ProjectOnPlane(desiredMove, hitInfo.normal).normalized;
 
             m_MoveDir.x = desiredMove.x*speed;
