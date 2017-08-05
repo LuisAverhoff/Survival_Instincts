@@ -206,7 +206,7 @@ public class Weapon : MonoBehaviour
 
         rigidbodyTracer.velocity = direction * tracerSpeed;
 
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitForSeconds(1.0f);
         SpawningPool.ReturnToCache(bulletTracer, "Tracer");
         // Send it back to the cache so that it may be used later.
     }
