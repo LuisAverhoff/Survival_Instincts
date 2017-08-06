@@ -4,33 +4,30 @@ using UnityEngine.UI;
 public class MinimapRadialBar : MonoBehaviour
 {
     [SerializeField]private Image radialBar;
-    [SerializeField]private float radialValue = 0;
-    [SerializeField]private float maxRadialValue = 100;
-    [SerializeField]private float maxRadialRotation = 180;
+    [SerializeField]private float radialValue = 100;
+    private float maxRadialValue;
+    [SerializeField]private float radialRotation = 180;
+    private float maxRadialRotation;
 
     void Awake()
     {
-        setRadialBar();
+        maxRadialValue = radialValue;
+        maxRadialRotation = radialRotation / 360.0f;
+        setRadialBar(0);
     }
 
-    public void setRadialBar()
+    public void setRadialBar(float amountToReduceBy)
     {
-        float amount = (radialValue / maxRadialValue) * maxRadialRotation / 360.0f;
-        radialBar.fillAmount = amount;
-    }
+        radialValue = Mathf.Clamp(radialValue - amountToReduceBy, 0, maxRadialValue);
 
-    public void reduceRadialValue(float amountToReduceBy)
-    {
-        radialValue -= amountToReduceBy;
+        if(radialValue > 0 && radialValue < maxRadialValue)
+        {
+            radialBar.fillAmount = Mathf.Clamp01(radialValue / maxRadialValue * maxRadialRotation);
+        }
     }
 
     public float getRadialValue()
     {
         return radialValue;
-    }
-
-    public float getMaxRadialValue()
-    {
-        return maxRadialValue;
     }
 }

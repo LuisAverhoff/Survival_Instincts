@@ -1,26 +1,39 @@
 ﻿using UnityEngine;
+using UnityStandardAssets.Characters.FirstPerson;
 
 public class PlayerVitals : MonoBehaviour
 {
     [SerializeField]private GameObject healthRadialBar;
     [SerializeField]private GameObject thirstRadialBar;
     [SerializeField]private GameObject hungerRadialBar;
+    [SerializeField]private GameObject staminaRadialBar;
 
     private MinimapRadialBar healthSlider;
     private MinimapRadialBar thirstSlider;
     private MinimapRadialBar hungerSlider;
+    private MinimapRadialBar staminaSlider;
 
     [SerializeField]private float healthFallRate;
     [SerializeField]private float thirstFallRate;
     [SerializeField]private float hungerFallRate;
+    private float staminaFallRate;
+    [SerializeField]private float staminaFallMult;
+    private float staminaRegainRate;
+    [SerializeField]private float staminaRegainMult;
+
+    private FirstPersonController playerController;
 
     // Use this for initialization
     void Start ()
     {
+        playerController = GetComponent<FirstPersonController>();
 
         healthSlider = healthRadialBar.GetComponent<MinimapRadialBar>();
         thirstSlider = thirstRadialBar.GetComponent<MinimapRadialBar>();
         hungerSlider = hungerRadialBar.GetComponent<MinimapRadialBar>();
+        staminaSlider = staminaRadialBar.GetComponent<MinimapRadialBar>();
+        staminaFallRate = 1.0f;
+        staminaRegainRate = 1.0f;
     }
 	
 	// Update is called once per frame
@@ -28,49 +41,31 @@ public class PlayerVitals : MonoBehaviour
     {
         if (hungerSlider.getRadialValue() <= 0 && thirstSlider.getRadialValue() <= 0)
         {
-            healthSlider.reduceRadialValue(Time.deltaTime / healthFallRate * 2);
+            healthSlider.setRadialBar(Time.deltaTime / healthFallRate * 2);
         }
         else if(hungerSlider.getRadialValue() <= 0 || thirstSlider.getRadialValue() <= 0)
         {
-            healthSlider.reduceRadialValue(Time.deltaTime / healthFallRate);
+            healthSlider.setRadialBar(Time.deltaTime / healthFallRate);
         }
-
-        healthSlider.setRadialBar();
 
         if(healthSlider.getRadialValue() <= 0)
         {
             killCharacter();
         }
 
-        if(hungerSlider.getRadialValue() >= 0)
+        hungerSlider.setRadialBar(Time.deltaTime / hungerFallRate);
+        thirstSlider.setRadialBar(Time.deltaTime / thirstFallRate);
+
+        if(playerController.isPlayerRunning())
         {
-            hungerSlider.reduceRadialValue(Time.deltaTime / hungerFallRate);
+            staminaSlider.setRadialBar(Time.deltaTime / staminaFallRate * staminaFallMult);
         }
-        else if(hungerSlider.getRadialValue() <= 0)
+        else
         {
-            hungerSlider.reduceRadialValue(0);
-        }
-        else if(hungerSlider.getRadialValue() >= hungerSlider.getMaxRadialValue())
-        {
-            hungerSlider.reduceRadialValue(hungerSlider.getMaxRadialValue());
+            staminaSlider.setRadialBar(Time.deltaTime / staminaRegainRate * staminaRegainMult);
         }
 
-        hungerSlider.setRadialBar();
-
-        if (thirstSlider.getRadialValue() >= 0)
-        {
-            thirstSlider.reduceRadialValue(Time.deltaTime / thirstFallRate);
-        }
-        else if (thirstSlider.getRadialValue() <= 0)
-        {
-            thirstSlider.reduceRadialValue(0);
-        }
-        else if (thirstSlider.getRadialValue() >= thirstSlider.getMaxRadialValue())
-        {
-            thirstSlider.reduceRadialValue(thirstSlider.getMaxRadialValue());
-        }
-
-        thirstSlider.setRadialBar();
+        playerController.setRunningSpeed(staminaSlider.getRadialValue());
     }
 
     private void killCharacter()

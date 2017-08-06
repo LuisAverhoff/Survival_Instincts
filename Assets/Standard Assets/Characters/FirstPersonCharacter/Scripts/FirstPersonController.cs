@@ -12,7 +12,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
         [SerializeField] private bool m_IsWalking;
         [SerializeField] private bool m_IsCrouching;
         [SerializeField] private float m_WalkSpeed;
-        [SerializeField] private float m_RunSpeed;
+        private float m_RunSpeed;
+        [SerializeField] private float m_RunSpeedNormal;
         [SerializeField] private float m_crouchSpeed;
         [SerializeField] private float crouchSmoothness;
         [SerializeField] [Range(0f, 1f)] private float m_RunstepLenghten;
@@ -237,7 +238,7 @@ namespace UnityStandardAssets.Characters.FirstPerson
 #if !MOBILE_INPUT
             // On standalone builds, walk/run speed is modified by a key press.
             // keep track of whether or not the character is walking or running
-            m_IsWalking = !CrossPlatformInputManager.GetButton("Running"); ;
+            m_IsWalking = !CrossPlatformInputManager.GetButton("Running");
 #endif
             // set the desired speed to be walking or running
             if (m_IsCrouching)
@@ -274,6 +275,22 @@ namespace UnityStandardAssets.Characters.FirstPerson
             //m_MouseLook.LookRotation (transform, m_Camera.transform);
         }
 
+        public bool isPlayerRunning()
+        {
+            return m_CharacterController.velocity.magnitude > 0 && !m_IsWalking && !m_IsCrouching;
+        }
+
+        public void setRunningSpeed(float stamina)
+        {
+            if(stamina <= 0)
+            {
+                m_RunSpeed = m_WalkSpeed;
+            }
+            else
+            {
+                m_RunSpeed = m_RunSpeedNormal;
+            }
+        }
 
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
