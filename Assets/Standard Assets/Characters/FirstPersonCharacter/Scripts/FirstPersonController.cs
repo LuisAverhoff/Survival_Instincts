@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityStandardAssets.CrossPlatformInput;
 using UnityStandardAssets.Utility;
@@ -28,11 +29,12 @@ namespace UnityStandardAssets.Characters.FirstPerson
         [SerializeField] private LerpControlledBob m_JumpBob = new LerpControlledBob();
         [SerializeField] private float m_StepInterval;
         [SerializeField] private AudioClip[] m_FootstepSounds;    // an array of footstep sounds that will be randomly selected from.
-        [SerializeField] private AudioClip m_JumpSound;           // the sound played when character leaves the ground.
-        [SerializeField] private AudioClip m_LandSound;           // the sound played when character touches back on ground.
-        
+        [SerializeField] private AudioClip m_JumpSound;           // the sound is played when character leaves the ground.
+        [SerializeField] private AudioClip m_LandSound;           // the sound is played when character touches back on ground.
+
         private Camera m_Camera;
         private bool m_Jump;
+        private bool m_StaminaDepleted;
         private float m_YRotation;
         private Vector2 m_Input;
         private Vector3 m_MoveDir = Vector3.zero;
@@ -43,7 +45,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private float m_StepCycle;
         private float m_NextStep;
         private bool m_Jumping;
-        private AudioSource m_AudioSource;
+        private AudioSource m_PlayerMovementAudioSource;
+        private AudioSource m_PlayerBreathingAudioSource;
         private float originalCharacterHeight;
         private float crouchCharacterHeight;
 
@@ -58,7 +61,10 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_StepCycle = 0f;
             m_NextStep = m_StepCycle/2f;
             m_Jumping = false;
-            m_AudioSource = GetComponent<AudioSource>();
+            m_StaminaDepleted = false;
+            AudioSource[] allPlayerAudioSources = GetComponents<AudioSource>();
+            m_PlayerMovementAudioSource = allPlayerAudioSources[0];
+            m_PlayerBreathingAudioSource = allPlayerAudioSources[1];
             originalCharacterHeight = m_CharacterController.height;
             crouchCharacterHeight = originalCharacterHeight * 0.5f;
 			//m_MouseLook.Init(transform , m_Camera.transform);
@@ -112,8 +118,8 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         private void PlayLandingSound()
         {
-            m_AudioSource.clip = m_LandSound;
-            m_AudioSource.Play();
+            //m_AudioSource.clip = m_LandSound;
+            m_PlayerMovementAudioSource.PlayOneShot(m_LandSound);
             m_NextStep = m_StepCycle + .5f;
         }
 
@@ -162,10 +168,9 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         private void PlayJumpSound()
         {
-            m_AudioSource.clip = m_JumpSound;
-            m_AudioSource.Play();
+            //m_AudioSource.clip = m_JumpSound;
+            m_PlayerMovementAudioSource.PlayOneShot(m_JumpSound);
         }
-
 
         private void ProgressStepCycle(float speed)
         {
@@ -195,11 +200,11 @@ namespace UnityStandardAssets.Characters.FirstPerson
             // pick & play a random footstep sound from the array,
             // excluding sound at index 0
             int n = Random.Range(1, m_FootstepSounds.Length);
-            m_AudioSource.clip = m_FootstepSounds[n];
-            m_AudioSource.PlayOneShot(m_AudioSource.clip);
+            m_PlayerMovementAudioSource.clip = m_FootstepSounds[n];
+            m_PlayerMovementAudioSource.PlayOneShot(m_PlayerMovementAudioSource.clip);
             // move picked sound to index 0 so it's not picked next time
             m_FootstepSounds[n] = m_FootstepSounds[0];
-            m_FootstepSounds[0] = m_AudioSource.clip;
+            m_FootstepSounds[0] = m_PlayerMovementAudioSource.clip;
         }
 
 
@@ -282,14 +287,27 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         public void setRunningSpeed(float stamina)
         {
-            if(stamina <= 0)
+            // How stamina you have to recover before been able to run again.
+            if (m_StaminaDepleted && stamina > 0.5f)
+            {
+                m_StaminaDepleted = false;
+            }
+
+            if(stamina <= 0.0f)
             {
                 m_RunSpeed = m_WalkSpeed;
+                m_StaminaDepleted = true;
+                m_PlayerBreathingAudioSource.Play();
             }
-            else
+            else if(!m_StaminaDepleted)
             {
                 m_RunSpeed = m_RunSpeedNormal;
             }
+        }
+
+        public bool isStaminaDepleted()
+        {
+            return m_StaminaDepleted;
         }
 
         private void OnControllerColliderHit(ControllerColliderHit hit)

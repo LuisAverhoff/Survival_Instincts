@@ -30,4 +30,9 @@ public class MinimapRadialBar : MonoBehaviour
     {
         return radialValue;
     }
+
+    public float getMaxRadialValue()
+    {
+        return maxRadialValue;
+    }
 }

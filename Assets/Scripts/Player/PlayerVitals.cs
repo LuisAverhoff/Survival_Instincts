@@ -56,7 +56,7 @@ public class PlayerVitals : MonoBehaviour
         hungerSlider.setRadialBar(Time.deltaTime / hungerFallRate);
         thirstSlider.setRadialBar(Time.deltaTime / thirstFallRate);
 
-        if(playerController.isPlayerRunning())
+        if(playerController.isPlayerRunning() && !playerController.isStaminaDepleted())
         {
             staminaSlider.setRadialBar(Time.deltaTime / staminaFallRate * staminaFallMult);
         }
@@ -65,7 +65,7 @@ public class PlayerVitals : MonoBehaviour
             staminaSlider.setRadialBar(Time.deltaTime / staminaRegainRate * staminaRegainMult);
         }
 
-        playerController.setRunningSpeed(staminaSlider.getRadialValue());
+        playerController.setRunningSpeed(staminaSlider.getRadialValue() / staminaSlider.getMaxRadialValue());
     }
 
     private void killCharacter()
