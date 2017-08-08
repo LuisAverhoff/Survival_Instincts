@@ -1,109 +1,91 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 using UnityEngine.AI;
 
 public class BasicAI : MonoBehaviour
 {
     public Transform player;
     public Transform head;
+    public Transform[] WayPoints;
 
     private Animator agentAnimator;
     private NavMeshAgent agent;
-
-    public int agentHealth;
 
     public float lineOfSightRange;
     public float attackingRange;
     public float lineOfSightAngle;
 
-    public float wanderTimer;
-    public float wanderRadius;
+    public float minIdleTime;
+    public float maxIdleTime;
 
-    private bool isPursingPlayer;
-
-    public float idleTimer;
-
-    private float timer;
+    private string state;
+    private int currentWayPoint;
 
     // Use this for initialization
-    void Start ()
+    void Start()
     {
         agentAnimator = GetComponent<Animator>();
         agent = GetComponent<NavMeshAgent>();
-        timer = wanderTimer;
-        isPursingPlayer = false;
-	}
-	
-	// Update is called once per frame
-	void Update ()
+        agent.autoBraking = false;
+        state = "Patrolling";
+        currentWayPoint = -1;
+        agentAnimator.SetBool("isIdle", false);
+        agentAnimator.SetBool("isWalking", true);
+        agentAnimator.SetBool("isAttacking", false);
+        goToWayPoint();
+    }
+
+    // Update is called once per frame
+    void Update()
     {
-        if(!isAgentDead())
+        Vector3 direction = player.position - transform.position;
+        direction.y = 0;
+        float angle = Vector3.Angle(direction, head.up);
+
+        checkIfPlayerNearby(direction, angle);
+
+        if (WayPoints.Length > 0 && state == "Patrolling" && hasReachedDestination())
         {
-            Vector3 direction = player.position - transform.position;
-            direction.y = 0;
-            float angle = Vector3.Angle(direction, head.up);
-
-            patrol(direction, angle);
-
-            if (hasReachedDestination())
-            {
-                timer = wanderTimer;
-            }
+            StartCoroutine(idleAndGoToWayPoint());
+            //goToWayPoint();
         }
     }
 
-    private void patrol(Vector3 direction, float angle)
+    private void goToWayPoint()
     {
-        if (timer >= wanderTimer && !isPursingPlayer && !agentAnimator.GetBool("isIdle"))
+        int nextWayPoint = Random.Range(0, WayPoints.Length);
+
+        if (nextWayPoint == currentWayPoint)
         {
-            agentAnimator.SetBool("isWalking", true);
-            Vector3 newPosition = GenerateRandomPosition(transform.position, wanderRadius * 2 * agent.height);
-            agent.SetDestination(newPosition);
-            timer = 0.0f;
+            currentWayPoint = (nextWayPoint + 1) % WayPoints.Length;
         }
-        else if(agentAnimator.GetBool("isIdle") && timer >= idleTimer)
+        else
+            currentWayPoint = nextWayPoint;
+
+        agent.SetDestination(WayPoints[currentWayPoint].position);
+    }
+
+    private void checkIfPlayerNearby(Vector3 direction, float angle)
+    {
+        float currentDistance = Vector3.Distance(player.position, transform.position);
+
+        if (currentDistance < lineOfSightRange && (angle < lineOfSightAngle || state == "Pursuing"))
         {
-            agentAnimator.SetBool("isIdle", false);
-            agent.isStopped = false;
-            timer = wanderTimer;
+            chase(direction);
         }
         else
         {
-            float currentDistance = Vector3.Distance(player.position, transform.position);
-
-            if (currentDistance < lineOfSightRange && angle < lineOfSightAngle)
+            if(state == "Pursuing")
             {
-                isPursingPlayer = true;
-                chase(direction);
+                StartCoroutine(idleAndGoToWayPoint());
             }
-            else
-            {
-                if(isPursingPlayer)
-                {
-                    agentAnimator.SetBool("isIdle", true);
-                    agentAnimator.SetBool("isWalking", false);
-                    agentAnimator.SetBool("isAttacking", false);
-                    agent.isStopped = true;
-                    timer = 0.0f;
-                }
-
-                isPursingPlayer = false;
-            }
-
-            timer += Time.deltaTime;
         }
-    }
-
-    public static Vector3 GenerateRandomPosition(Vector3 origin, float dist)
-    {
-        Vector3 randDirection = origin + Random.insideUnitSphere * dist;
-        NavMeshHit navHit;
-        NavMesh.SamplePosition(randDirection, out navHit, dist, NavMesh.AllAreas);
-        return navHit.position;
     }
 
     private void chase(Vector3 direction)
     {
         agentAnimator.SetBool("isIdle", false);
+        state = "Pursuing";
 
         if (direction.magnitude > attackingRange)
         {
@@ -118,23 +100,35 @@ public class BasicAI : MonoBehaviour
         }
     }
 
-    private bool hasReachedDestination()
+    private IEnumerator idleAndGoToWayPoint()
     {
-        return agent.remainingDistance < agent.stoppingDistance && !agent.pathPending;
+        state = "Idle";
+        agentAnimator.SetBool("isIdle", true);
+        agentAnimator.SetBool("isWalking", false);
+        agentAnimator.SetBool("isAttacking", false);
+
+        float idleTime = Random.Range(minIdleTime, maxIdleTime);
+
+        yield return new WaitForSeconds(idleTime);
+
+        state = "Patrolling";
+        agentAnimator.SetBool("isIdle", false);
+        agentAnimator.SetBool("isWalking", true);
+        agentAnimator.SetBool("isAttacking", false);
+
+        goToWayPoint();
     }
 
-    public bool isAgentDead()
+    private bool hasReachedDestination()
     {
-        if(agentHealth <= 0)
+        if (!agent.pathPending && Vector3.Distance(agent.destination, agent.transform.position) <= agent.stoppingDistance)
         {
-            return true;
+            if (!agent.hasPath || agent.velocity.sqrMagnitude == 0.0f)
+            {
+                return true;
+            }
         }
 
         return false;
-    }
-
-    public void takeDamage(int damage)
-    {
-        agentHealth -= damage;
     }
 }
