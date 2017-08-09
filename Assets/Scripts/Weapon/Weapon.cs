@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
+using System.Text;
 using DigitalRuby.Pooling; // This namespace is used to help with caching previously created objects so that we don't constantly instantiate and destroy them.
 using InControl; // This namespace is used to help with input management.
 
@@ -8,47 +10,48 @@ public class Weapon : MonoBehaviour
     private Animator weaponAnim;
     private AudioSource weaponAudioSource;
 
-    public string tracer;
-    public string bulletImpact;
+    [SerializeField]private Text BulletDisplayText;
+    [SerializeField]private Text totalBulletsText;
 
-    public ParticleSystem muzzleFlash;
-    public AudioClip weaponShootClip;
-    public AudioClip weaponReloadClip;
+    [SerializeField]private string tracer;
+    [SerializeField]private string bulletImpact;
+
+    [SerializeField]private ParticleSystem muzzleFlash;
+    [SerializeField]private AudioClip weaponShootClip;
+    [SerializeField]private AudioClip weaponReloadClip;
 
     // These two variables control the spread of the cone.
-    public float scaleLimit;
-    public float spreadZDirection;
+    [SerializeField]private float scaleLimit;
+    [SerializeField]private float spreadZDirection;
 
-    public float tracerSpeed;
+    [SerializeField]private float tracerSpeed;
 
-    public Transform bulletSpawnPoint;
-    public int bulletRange;
-    public float bulletSpeed;
+    [SerializeField]private Transform bulletSpawnPoint;
+    [SerializeField]private int bulletRange;
+    [SerializeField]private float bulletSpeed;
 
     private Vector3 originalPosition;
 
-    public Vector3 aimPosition;
-    public float aimDownSightSpeed = 8.0f;
+    [SerializeField]private Vector3 aimPosition;
+    [SerializeField]private float aimDownSightSpeed = 8.0f;
 
-    public float maxRecoilZPosition;
-    public float minRecoilZPosition;
-    public float recoil;
-    public float recoilSpeed;
+    [SerializeField]private float maxRecoilZPosition;
+    [SerializeField]private float minRecoilZPosition;
+    [SerializeField]private float recoil;
+    [SerializeField]private float recoilSpeed;
 
-    public enum ShootMode {Auto, Semi};
-    public ShootMode shootingMode;
+    [SerializeField]private enum ShootMode {Auto, Semi};
+    [SerializeField]private ShootMode shootingMode;
 
-    public int bulletsPerMag = 30;
-    public int bulletsLeft = 200;
+    [SerializeField]private int bulletsPerMag = 30;
+    [SerializeField]private int totalBullets = 200;
 
-    public float damage = 5.0f;
-
-    public int currentBullets;
+    [SerializeField]private int currentBullets;
 
     private bool isReloading;
     private bool shootInput;
 
-    public float fireDelay = 0.1f; // The delay between each shoot.
+    [SerializeField]private float fireDelay = 0.1f; // The delay between each shoot.
 
     private float fireTimer; // Time counter for the delay.
 
@@ -83,7 +86,9 @@ public class Weapon : MonoBehaviour
         if (device.Action3)
         {
             if (currentBullets < bulletsPerMag && thereAreBulletsLeft())
+            {
                 playReloadAnimation();
+            }
         }
 
         if (fireTimer < fireDelay)
@@ -99,7 +104,7 @@ public class Weapon : MonoBehaviour
 
     private bool thereAreBulletsLeft()
     {
-        return bulletsLeft > 0;
+        return totalBullets > 0;
     }
 
     public bool isShooting()
@@ -112,6 +117,7 @@ public class Weapon : MonoBehaviour
         transform.localPosition = originalPosition;
         transform.localRotation = Quaternion.identity;
         transform.localScale = Vector3.one;
+        updateAmmoUI(currentBullets);
     }
 
     void FixedUpdate()
@@ -131,7 +137,9 @@ public class Weapon : MonoBehaviour
                 }
             }
             else if (thereAreBulletsLeft())
+            {
                 playReloadAnimation();
+            }
         }
     }
 
@@ -154,6 +162,7 @@ public class Weapon : MonoBehaviour
         muzzleFlash.Play();
         weaponAudioSource.PlayOneShot(weaponShootClip);
 
+        updateCurrentBulletsText();
         currentBullets--;
         fireTimer = 0.0f;
     }
@@ -226,13 +235,15 @@ public class Weapon : MonoBehaviour
 
     public void reloadBullets()
     {
-        if (bulletsLeft <= 0) return;
+        if (totalBullets <= 0) return;
 
         int bulletsToLoad = bulletsPerMag - currentBullets;
-        int bulletsToDeduct = (bulletsLeft >= bulletsToLoad) ? bulletsToLoad : bulletsLeft;
+        int bulletsToDeduct = (totalBullets >= bulletsToLoad) ? bulletsToLoad : totalBullets;
 
-        bulletsLeft -= bulletsToDeduct;
+        totalBullets -= bulletsToDeduct;
         currentBullets += bulletsToDeduct;
+
+        updateAmmoUI(currentBullets);
     }
 
     private void playReloadAnimation()
@@ -240,5 +251,24 @@ public class Weapon : MonoBehaviour
         if (isReloading) return;
 
         weaponAnim.CrossFadeInFixedTime("Reload", 0.01f);
+    }
+
+    public void updateAmmoUI(int totalBulletsToDisplay)
+    {
+        StringBuilder activeBullets = new StringBuilder(bulletsPerMag);
+
+        for (int i = 0; i < totalBulletsToDisplay; i++)
+        {
+            activeBullets.Append("I ");
+        }
+
+        BulletDisplayText.text = activeBullets.ToString();
+        totalBulletsText.text = totalBullets.ToString();
+    }
+
+    public void updateCurrentBulletsText()
+    {
+        int bulletOffsetTextIndex = currentBullets * 2 - 1;
+        BulletDisplayText.text = BulletDisplayText.text.Remove(bulletOffsetTextIndex);
     }
 }

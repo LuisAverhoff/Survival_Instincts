@@ -42,12 +42,11 @@ public class BasicAI : MonoBehaviour
         direction.y = 0;
         float angle = Vector3.Angle(direction, head.up);
 
-        checkIfPlayerNearby(direction, angle);
+        checkIfPlayerNearby(angle);
 
         if (WayPoints.Length > 0 && state == "Patrolling" && hasReachedDestination())
         {
             StartCoroutine(idleAndGoToWayPoint());
-            //goToWayPoint();
         }
     }
 
@@ -65,13 +64,13 @@ public class BasicAI : MonoBehaviour
         agent.SetDestination(WayPoints[currentWayPoint].position);
     }
 
-    private void checkIfPlayerNearby(Vector3 direction, float angle)
+    private void checkIfPlayerNearby(float angle)
     {
         float currentDistance = Vector3.Distance(player.position, transform.position);
 
         if (currentDistance < lineOfSightRange && (angle < lineOfSightAngle || state == "Pursuing"))
         {
-            chase(direction);
+            chase(currentDistance);
         }
         else
         {
@@ -82,12 +81,12 @@ public class BasicAI : MonoBehaviour
         }
     }
 
-    private void chase(Vector3 direction)
+    private void chase(float distance)
     {
         agentAnimator.SetBool("isIdle", false);
         state = "Pursuing";
 
-        if (direction.magnitude > attackingRange)
+        if (distance > attackingRange)
         {
             agent.SetDestination(player.position);
             agentAnimator.SetBool("isWalking", true);
@@ -102,21 +101,19 @@ public class BasicAI : MonoBehaviour
 
     private IEnumerator idleAndGoToWayPoint()
     {
+        agent.isStopped = true;
         state = "Idle";
         agentAnimator.SetBool("isIdle", true);
         agentAnimator.SetBool("isWalking", false);
-        agentAnimator.SetBool("isAttacking", false);
 
-        float idleTime = Random.Range(minIdleTime, maxIdleTime);
+        yield return new WaitForSeconds(Random.Range(minIdleTime, maxIdleTime));
 
-        yield return new WaitForSeconds(idleTime);
+        goToWayPoint();
 
+        agent.isStopped = false;
         state = "Patrolling";
         agentAnimator.SetBool("isIdle", false);
         agentAnimator.SetBool("isWalking", true);
-        agentAnimator.SetBool("isAttacking", false);
-
-        goToWayPoint();
     }
 
     private bool hasReachedDestination()
